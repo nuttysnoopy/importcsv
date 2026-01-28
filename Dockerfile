@@ -23,5 +23,8 @@ ENV ASPNETCORE_HTTPS_PORTS=8081
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY entrypoint.sh /app/
 
-ENTRYPOINT ["dotnet", "CsvImportApp.dll"]
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]

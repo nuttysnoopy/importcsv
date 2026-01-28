@@ -12,6 +12,8 @@ services:
       - MSSQL_PID=Express                  # เลือก Edition (Developer, Express, Standard)
     volumes:
       - sqlserver_data:/var/opt/mssql      # Mount volume สำหรับเก็บข้อมูล
+    networks:
+      - csvimport-network
 
   db-migration:
     build:
@@ -37,7 +39,8 @@ services:
     ports:
       - "5000:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Initial Catalog=CsvImportDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
     depends_on:
       - sqlserver
