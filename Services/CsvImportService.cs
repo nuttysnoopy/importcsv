@@ -43,7 +43,14 @@ public class CsvImportService : ICsvImportService
                 csv.Context.RegisterClassMap<CsvRecordMap>();
                 var recordList = csv.GetRecords<CsvRecordDto>().ToList();
 
-                int rowNumber = 2; // Start from 2 (header is 1)
+                // ดึงข้อมูลทั้งหมดจาก database มาเก็บใน memory ก่อน
+                var allEmails = recordList.Select(r => r.Email).Distinct().ToList();
+                var existingRecords = await _dbContext.CsvRecords
+                    .Where(r => allEmails.Contains(r.Email))
+                    .ToDictionaryAsync(r => r.Email, r => r);
+
+                int rowNumber = 2;
+
                 foreach (var record in recordList)
                 {
                     try
@@ -58,27 +65,52 @@ public class CsvImportService : ICsvImportService
                             continue;
                         }
 
-                        // Check for duplicate email
-                        var exists = _dbContext.CsvRecords.Any(r => r.Email == record.Email);
-                        if (exists)
+                        // เช็คว่า email มีอยู่แล้วหรือไม่
+                        if (existingRecords.TryGetValue(record.Email, out var existingRecord))
                         {
-                            errors.Add($"Row {rowNumber}: Email '{record.Email}' already exists");
-                            result.RecordsFailed++;
-                            rowNumber++;
-                            continue;
+                            // ⭐ เช็คว่ามีการเปลี่ยนแปลงจริงหรือไม่
+                            bool hasChanges = false;
+
+                            if (existingRecord.Phone != record.Phone)
+                            {
+                                existingRecord.Phone = record.Phone;
+                                hasChanges = true;
+                            }
+
+                            if (existingRecord.Address != record.Address)
+                            {
+                                existingRecord.Address = record.Address;
+                                hasChanges = true;
+                            }
+
+                            // ⭐ อัปเดตเฉพาะเมื่อมีการเปลี่ยนแปลงจริงๆ
+                            if (hasChanges)
+                            {
+                                existingRecord.UpdatedAt = DateTime.UtcNow;
+                                result.RecordsUpdated++;
+                            }
+                            else
+                            {
+                                // ไม่มีการเปลี่ยนแปลง - ไม่ต้องทำอะไร
+                                // EF Core จะไม่ generate UPDATE statement
+                            }
+                        }
+                        else
+                        {
+                            // สร้าง record ใหม่
+                            var csvRecord = new CsvRecord
+                            {
+                                Name = record.Name,
+                                Email = record.Email,
+                                Phone = record.Phone,
+                                Address = record.Address,
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            records.Add(csvRecord);
+                            result.RecordsImported++;
                         }
 
-                        var csvRecord = new CsvRecord
-                        {
-                            Name = record.Name,
-                            Email = record.Email,
-                            Phone = record.Phone,
-                            Address = record.Address,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        records.Add(csvRecord);
-                        result.RecordsImported++;
                     }
                     catch (Exception ex)
                     {
@@ -94,11 +126,13 @@ public class CsvImportService : ICsvImportService
             if (records.Count > 0)
             {
                 await _dbContext.CsvRecords.AddRangeAsync(records);
-                await _dbContext.SaveChangesAsync();
-                _logger.LogInformation($"Successfully imported {records.Count} records from {fileName}");
             }
 
-            result.Message = $"Import completed: {result.RecordsImported} successful, {result.RecordsFailed} failed";
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation($"Successfully imported {result.RecordsImported} new records and updated {result.RecordsUpdated} records from {fileName}");
+
+            result.Message = $"Import completed: {result.RecordsImported} new, {result.RecordsUpdated} updated, {result.RecordsFailed} failed";
             result.Errors = errors;
 
             return result;

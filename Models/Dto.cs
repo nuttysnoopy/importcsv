@@ -12,6 +12,7 @@ public class ImportResult
 {
     public bool Success { get; set; }
     public int RecordsImported { get; set; }
+    public int RecordsUpdated { get; set; }
     public int RecordsFailed { get; set; }
     public string Message { get; set; } = string.Empty;
     public List<string> Errors { get; set; } = new();
