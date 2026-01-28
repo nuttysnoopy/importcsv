@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver_container
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y                      # ยอมรับข้อตกลงการใช้งาน
+      - SA_PASSWORD=YourStrong@Passw0rd    # กำหนดรหัสผ่านผู้ดูแลระบบ
+      - MSSQL_PID=Express                  # เลือก Edition (Developer, Express, Standard)
+    volumes:
+      - sqlserver_data:/var/opt/mssql      # Mount volume สำหรับเก็บข้อมูล
+
+  db-migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: importcsv_migration
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Initial Catalog=CsvImportDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+    depends_on:
+      - sqlserver
+    networks:
+      - csvimport-network
+    command: dotnet ef database update
+    profiles:
+      - migration
+
+  importcsv-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: importcsv_api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Initial Catalog=CsvImportDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+    depends_on:
+      - sqlserver
+    networks:
+      - csvimport-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  csvimport-network:
