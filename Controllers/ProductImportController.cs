@@ -7,10 +7,12 @@ namespace CsvImportApp.Controllers;
 [Route("api/[controller]")]
 public class ProductImportController : ControllerBase
 {
-    private readonly ProductImportService _productImportService;
+    private readonly IProductImportService _productImportService;
     private readonly ILogger<ProductImportController> _logger;
 
-    public ProductImportController(ProductImportService productImportService, ILogger<ProductImportController> logger)
+    public ProductImportController(
+        IProductImportService productImportService,
+        ILogger<ProductImportController> logger)
     {
         _productImportService = productImportService;
         _logger = logger;

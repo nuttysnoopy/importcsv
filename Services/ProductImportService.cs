@@ -78,6 +78,48 @@ public class ProductImportService : IProductImportService
                                 hasChanges = true;
                             }
 
+                            /*if (existingRecord.Name != record.Name)
+                            {
+                                existingRecord.Name = record.Name;
+                                hasChanges = true;
+                            }
+
+                            if (existingRecord.Description != record.Description)
+                            {
+                                existingRecord.Description = record.Description;
+                                hasChanges = true;
+                            }
+
+                            if (existingRecord.Price != record.Price)
+                            {
+                                existingRecord.Price = record.Price;
+                                hasChanges = true;
+                            }
+
+                            if (existingRecord.Cost != record.Cost)
+                            {
+                                existingRecord.Cost = record.Cost;
+                                hasChanges = true;
+                            }*/
+
+                            if (existingRecord.Stock != record.Stock)
+                            {
+                                existingRecord.Stock = record.Stock;
+                                hasChanges = true;
+                            }
+
+                            if (existingRecord.MinStock != record.MinStock)
+                            {
+                                existingRecord.MinStock = record.MinStock;
+                                hasChanges = true;
+                            }
+
+                            /*if (existingRecord.ImageUrl != record.ImageUrl)
+                            {
+                                existingRecord.ImageUrl = record.ImageUrl;
+                                hasChanges = true;
+                            }*/
+
 
                             // ⭐ อัปเดตเฉพาะเมื่อมีการเปลี่ยนแปลงจริงๆ
                             if (hasChanges)

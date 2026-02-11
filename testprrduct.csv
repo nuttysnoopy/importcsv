@@ -1,0 +1,16 @@
+ProductCode,Name,Description,Price,Cost,Stock,MinStock,ImageUrl,IsActive
+P001,Notebook 14 inch,Notebook สำหรับทำงานทั่วไป,18900.00,15000.00,25,5,https://example.com/img/p001.jpg,true
+P002,Wireless Mouse,เมาส์ไร้สาย 2.4GHz,590.00,320.00,120,20,https://example.com/img/p002.jpg,true
+P003,Mechanical Keyboard,คีย์บอร์ด Mechanical Blue Switch,2590.00,1800.00,60,10,https://example.com/img/p003.jpg,true
+P004,USB-C Hub,Hub USB-C 6-in-1,1290.00,850.00,40,8,https://example.com/img/p004.jpg,true
+P005,27 inch Monitor,จอ IPS Full HD,6990.00,5400.00,18,3,https://example.com/img/p005.jpg,true
+P006,External SSD 1TB,SSD พกพาความเร็วสูง,3990.00,3200.00,35,5,https://example.com/img/p006.jpg,true
+P007,Laptop Stand,ขาตั้งโน้ตบุ๊กอลูมิเนียม,890.00,520.00,75,15,https://example.com/img/p007.jpg,true
+P008,Webcam HD,Webcam 1080p,1490.00,980.00,40,20,https://example.com/img/p008.jpg,true
+P009,Noise Cancelling Headphone,หูฟังตัดเสียงรบกวน,4990.00,3800.00,22,5,https://example.com/img/p009.jpg,true
+P010,Bluetooth Speaker,ลำโพงบลูทูธพกพา,2290.00,1600.00,45,8,https://example.com/img/p010.jpg,true
+P011,Smart Watch,นาฬิกาอัจฉริยะ,3590.00,2700.00,30,5,https://example.com/img/p011.jpg,true
+P012,Power Bank 20000mAh,แบตสำรองความจุสูง,1290.00,900.00,80,15,https://example.com/img/p012.jpg,true
+P013,LAN Cable 10m,สายแลน CAT6,190.00,90.00,200,50,,true
+P014,HDMI Cable 2m,สาย HDMI 4K,290.00,140.00,150,30,,true
+P015,Gaming Chair,เก้าอี้เล่นเกม,8990.00,7200.00,10,2,https://example.com/img/p015.jpg,false
