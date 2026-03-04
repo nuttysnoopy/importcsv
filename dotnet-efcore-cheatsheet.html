@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>.NET Core & EF Core — Cheat Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --card: #1a1e2b;
+    --border: #252a3a;
+    --accent: #7c6cfa;
+    --accent2: #3ecfcf;
+    --accent3: #f4a742;
+    --accent4: #e05c8a;
+    --text: #e2e4ef;
+    --muted: #7b80a0;
+    --code-bg: #0a0c12;
+    --tag-dotnet: #512bd4;
+    --tag-ef: #1b6ec2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  .hero {
+    position: relative;
+    padding: 56px 40px 40px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #0d0f14 0%, #13102a 60%, #0d0f14 100%);
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,108,250,0.18) 0%, transparent 70%);
+    top: -200px; right: -100px;
+    pointer-events: none;
+  }
+
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .hero-title span.dot { color: var(--accent); }
+  .hero-title span.ef  { color: var(--accent2); }
+
+  .hero-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .badge-row { display: flex; gap: 10px; flex-wrap: wrap; align-self: flex-end; }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .badge-dotnet { background: rgba(81,43,212,0.4); color: #a898ff; border: 1px solid #512bd4; }
+  .badge-ef     { background: rgba(27,110,194,0.35); color: #76c2f8; border: 1px solid #1b6ec2; }
+
+  /* search bar */
+  .search-wrap {
+    padding: 20px 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-inner {
+    max-width: 560px;
+    position: relative;
+  }
+  .search-inner input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px 10px 42px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-inner input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 1rem; pointer-events: none;
+  }
+
+  /* tabs */
+  .tabs {
+    display: flex; gap: 0;
+    padding: 0 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 14px 22px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+    white-space: nowrap;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* main layout */
+  .content {
+    padding: 32px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section { display: none; }
+  .section.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+
+  /* card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+    animation: fadeUp .35s ease both;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  }
+  .card-icon { font-size: 1rem; }
+  .card-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .card-tag {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .tag-dotnet { background: rgba(81,43,212,0.3); color: #a898ff; border: 1px solid #512bd430; }
+  .tag-ef     { background: rgba(27,110,194,0.3); color: #76c2f8; border: 1px solid #1b6ec230; }
+  .tag-both   { background: rgba(62,207,207,0.15); color: #3ecfcf; border: 1px solid #3ecfcf30; }
+
+  .card-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+  .cmd-block {
+    display: flex; align-items: flex-start; gap: 10px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    transition: background .15s, border-color .15s;
+    position: relative;
+  }
+  .cmd-block:hover { background: var(--code-bg); border-color: var(--border); }
+
+  .cmd-wrap {
+    flex: 1; min-width: 0;
+  }
+  .cmd-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent2);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .cmd-line .kw  { color: var(--accent); }
+  .cmd-line .arg { color: var(--accent3); }
+  .cmd-line .opt { color: #e05c8a; }
+  .cmd-line .cmt { color: var(--muted); font-style: italic; }
+
+  .cmd-desc {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.45;
+  }
+
+  .copy-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 0.85rem;
+    padding: 2px 4px; border-radius: 4px;
+    transition: color .15s, background .15s;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .copy-btn:hover { color: var(--accent2); background: rgba(62,207,207,0.1); }
+  .copy-btn.copied { color: #3ecfcf; }
+
+  .divider {
+    height: 1px; background: var(--border); margin: 2px 0;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--card); border: 1px solid var(--accent2);
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 10px 18px; border-radius: 8px;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity .25s, transform .25s;
+    pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* footer */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media(max-width:600px){
+    .hero { padding: 36px 20px 28px; }
+    .search-wrap, .tabs { padding-left: 20px; padding-right: 20px; }
+    .content { padding: 20px; }
+    .section.active { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div>
+    <div class="hero-title">
+      <span class="dot">.NET</span> Core<br>
+      <span class="ef">EF</span> Core
+    </div>
+    <div class="hero-sub">Command Cheat Sheet — CLI Quick Reference</div>
+  </div>
+  <div class="badge-row">
+    <span class="badge badge-dotnet">dotnet CLI</span>
+    <span class="badge badge-ef">EF Core Tools</span>
+  </div>
+</header>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-inner">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="ค้นหาคำสั่ง... เช่น migration, build, run">
+  </div>
+</div>
+
+<!-- TABS -->
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('all', this)">ทั้งหมด</button>
+  <button class="tab-btn" onclick="switchTab('project', this)">.NET — Project</button>
+  <button class="tab-btn" onclick="switchTab('build', this)">.NET — Build & Run</button>
+  <button class="tab-btn" onclick="switchTab('nuget', this)">.NET — NuGet</button>
+  <button class="tab-btn" onclick="switchTab('ef', this)">EF Core — Migration</button>
+  <button class="tab-btn" onclick="switchTab('efdb', this)">EF Core — Database</button>
+</nav>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- ALL / PROJECT -->
+  <div class="section active" id="sec-all">
+  </div>
+  <div class="section" id="sec-project"></div>
+  <div class="section" id="sec-build"></div>
+  <div class="section" id="sec-nuget"></div>
+  <div class="section" id="sec-ef"></div>
+  <div class="section" id="sec-efdb"></div>
+
+</main>
+
+<div class="footer">✦ .NET Core & EF Core Cheat Sheet — คัดลอกคำสั่งด้วยคลิกเดียว</div>
+<div class="toast" id="toast">✓ Copied!</div>
+
+<script>
+const DATA = [
+  // ── .NET PROJECT ──────────────────────────────────────────
+  {
+    cat: 'project', tag: 'dotnet', icon: '📁', title: 'สร้าง Project ใหม่',
+    cmds: [
+      { cmd: 'dotnet new webapi -n <span class="arg">MyApi</span>', desc: 'สร้าง Web API project' },
+      { cmd: 'dotnet new mvc -n <span class="arg">MyApp</span>', desc: 'สร้าง MVC project' },
+      { cmd: 'dotnet new console -n <span class="arg">MyApp</span>', desc: 'สร้าง Console app' },
+      { cmd: 'dotnet new classlib -n <span class="arg">MyLib</span>', desc: 'สร้าง Class library' },
+      { cmd: 'dotnet new blazorserver -n <span class="arg">MyBlazor</span>', desc: 'สร้าง Blazor Server' },
+      { cmd: 'dotnet new <span class="opt">--list</span>', desc: 'ดู template ทั้งหมด' },
+    ]
+  },
+  {
+    cat: 'project', tag: 'dotnet', icon: '🗂️', title: 'Solution & Project',
+    cmds: [
+      { cmd: 'dotnet new sln -n <span class="arg">MySolution</span>', desc: 'สร้าง Solution ใหม่' },
+      { cmd: 'dotnet sln <span class="arg">MySolution.sln</span> add <span class="arg">./MyApi/MyApi.csproj</span>', desc: 'เพิ่ม project เข้า solution' },
+      { cmd: 'dotnet sln list', desc: 'ดู project ใน solution' },
+      { cmd: 'dotnet sln remove <span class="arg">./MyApi/MyApi.csproj</span>', desc: 'ลบ project ออกจาก solution' },
+      { cmd: 'dotnet add reference <span class="arg">../MyLib/MyLib.csproj</span>', desc: 'อ้างอิง project อื่น' },
+    ]
+  },
+
+  // ── .NET BUILD & RUN ──────────────────────────────────────
+  {
+    cat: 'build', tag: 'dotnet', icon: '🔨', title: 'Build & Run',
+    cmds: [
+      { cmd: 'dotnet build', desc: 'Build project' },
+      { cmd: 'dotnet build <span class="opt">-c Release</span>', desc: 'Build แบบ Release' },
+      { cmd: 'dotnet run', desc: 'Run project' },
+      { cmd: 'dotnet run <span class="opt">--project</span> <span class="arg">./MyApi</span>', desc: 'Run project ที่ระบุ' },
+      { cmd: 'dotnet watch run', desc: 'Hot reload — reload อัตโนมัติเมื่อไฟล์เปลี่ยน' },
+    ]
+  },
+  {
+    cat: 'build', tag: 'dotnet', icon: '📦', title: 'Publish & Clean',
+    cmds: [
+      { cmd: 'dotnet publish <span class="opt">-c Release -o</span> <span class="arg">./out</span>', desc: 'Publish ไปยัง folder' },
+      { cmd: 'dotnet publish <span class="opt">-r win-x64 --self-contained</span>', desc: 'Publish แบบ self-contained (Windows)' },
+      { cmd: 'dotnet publish <span class="opt">-r linux-x64 --self-contained</span>', desc: 'Publish แบบ self-contained (Linux)' },
+      { cmd: 'dotnet clean', desc: 'ลบ build output' },
+      { cmd: 'dotnet restore', desc: 'Restore NuGet packages' },
+    ]
+  },
+  {
+    cat: 'build', tag: 'dotnet', icon: '🧪', title: 'Test',
+    cmds: [
+      { cmd: 'dotnet test', desc: 'รัน unit tests ทั้งหมด' },
+      { cmd: 'dotnet test <span class="opt">--filter</span> <span class="arg">"Category=Unit"</span>', desc: 'Filter test ตาม category' },
+      { cmd: 'dotnet test <span class="opt">--logger</span> <span class="arg">"trx;LogFileName=results.trx"</span>', desc: 'บันทึก test result เป็น TRX' },
+      { cmd: 'dotnet test <span class="opt">--collect "Code Coverage"</span>', desc: 'เก็บ code coverage' },
+    ]
+  },
+
+  // ── NUGET ─────────────────────────────────────────────────
+  {
+    cat: 'nuget', tag: 'dotnet', icon: '📥', title: 'จัดการ NuGet Packages',
+    cmds: [
+      { cmd: 'dotnet add package <span class="arg">Newtonsoft.Json</span>', desc: 'ติดตั้ง package' },
+      { cmd: 'dotnet add package <span class="arg">Serilog</span> <span class="opt">--version 3.1.1</span>', desc: 'ติดตั้ง package เวอร์ชันที่ระบุ' },
+      { cmd: 'dotnet remove package <span class="arg">Newtonsoft.Json</span>', desc: 'ลบ package' },
+      { cmd: 'dotnet list package', desc: 'ดู package ทั้งหมดที่ติดตั้ง' },
+      { cmd: 'dotnet list package <span class="opt">--outdated</span>', desc: 'ดู package ที่ต้อง update' },
+      { cmd: 'dotnet nuget push <span class="arg">*.nupkg</span> <span class="opt">-k</span> <span class="arg">API_KEY</span> <span class="opt">-s</span> <span class="arg">https://api.nuget.org/v3/index.json</span>', desc: 'เผยแพร่ package ขึ้น NuGet' },
+    ]
+  },
+
+  // ── EF CORE MIGRATION ────────────────────────────────────
+  {
+    cat: 'ef', tag: 'ef', icon: '🔄', title: 'Migration',
+    cmds: [
+      { cmd: 'dotnet ef migrations add <span class="arg">InitialCreate</span>', desc: 'สร้าง migration ใหม่' },
+      { cmd: 'dotnet ef migrations add <span class="arg">AddUserTable</span> <span class="opt">-p</span> <span class="arg">MyData</span> <span class="opt">-s</span> <span class="arg">MyApi</span>', desc: 'ระบุ project (-p) และ startup project (-s)' },
+      { cmd: 'dotnet ef migrations list', desc: 'ดู migration ทั้งหมด' },
+      { cmd: 'dotnet ef migrations remove', desc: 'ลบ migration ล่าสุด' },
+      { cmd: 'dotnet ef migrations script', desc: 'สร้าง SQL script จาก migrations ทั้งหมด' },
+      { cmd: 'dotnet ef migrations script <span class="arg">20230101</span> <span class="arg">20230201</span>', desc: 'สร้าง SQL script ระหว่าง 2 migration' },
+    ]
+  },
+  {
+    cat: 'ef', tag: 'ef', icon: '🔧', title: 'ติดตั้ง EF Tools',
+    cmds: [
+      { cmd: 'dotnet tool install <span class="opt">--global</span> dotnet-ef', desc: 'ติดตั้ง EF CLI แบบ global' },
+      { cmd: 'dotnet tool update <span class="opt">--global</span> dotnet-ef', desc: 'อัปเดต EF CLI' },
+      { cmd: 'dotnet add package Microsoft.EntityFrameworkCore.Design', desc: 'เพิ่ม EF Design package (จำเป็น)' },
+      { cmd: 'dotnet add package Microsoft.EntityFrameworkCore.SqlServer', desc: 'เพิ่ม SQL Server provider' },
+      { cmd: 'dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL', desc: 'เพิ่ม PostgreSQL provider' },
+      { cmd: 'dotnet add package Microsoft.EntityFrameworkCore.Sqlite', desc: 'เพิ่ม SQLite provider' },
+    ]
+  },
+
+  // ── EF CORE DATABASE ─────────────────────────────────────
+  {
+    cat: 'efdb', tag: 'ef', icon: '🗄️', title: 'Database Update & Drop',
+    cmds: [
+      { cmd: 'dotnet ef database update', desc: 'Apply migrations ทั้งหมดที่ยังไม่ได้ apply' },
+      { cmd: 'dotnet ef database update <span class="arg">AddUserTable</span>', desc: 'Update ไปถึง migration ที่ระบุ' },
+      { cmd: 'dotnet ef database update <span class="arg">0</span>', desc: 'Rollback ทุก migration (ย้อนกลับ)' },
+      { cmd: 'dotnet ef database drop', desc: 'ลบ database' },
+      { cmd: 'dotnet ef database drop <span class="opt">--force</span>', desc: 'ลบ database โดยไม่ถาม confirm' },
+    ]
+  },
+  {
+    cat: 'efdb', tag: 'ef', icon: '🔁', title: 'Scaffold (Reverse Engineering)',
+    cmds: [
+      { cmd: 'dotnet ef dbcontext scaffold <span class="arg">"Server=.;Database=MyDb;Trusted_Connection=True"</span> Microsoft.EntityFrameworkCore.SqlServer', desc: 'Scaffold จาก SQL Server database' },
+      { cmd: 'dotnet ef dbcontext scaffold <span class="arg">"..."</span> Npgsql.EntityFrameworkCore.PostgreSQL <span class="opt">-o Models</span>', desc: 'Scaffold แล้วเก็บไว้ใน folder Models' },
+      { cmd: 'dotnet ef dbcontext scaffold <span class="arg">"..."</span> <span class="arg">Provider</span> <span class="opt">--force</span>', desc: 'Overwrite ไฟล์ที่มีอยู่แล้ว' },
+      { cmd: 'dotnet ef dbcontext scaffold <span class="arg">"..."</span> <span class="arg">Provider</span> <span class="opt">-t Users -t Orders</span>', desc: 'Scaffold เฉพาะบาง table' },
+    ]
+  },
+  {
+    cat: 'efdb', tag: 'ef', icon: '📋', title: 'DbContext Info',
+    cmds: [
+      { cmd: 'dotnet ef dbcontext list', desc: 'ดู DbContext ทั้งหมดใน project' },
+      { cmd: 'dotnet ef dbcontext info', desc: 'ดูข้อมูล DbContext และ connection string' },
+      { cmd: 'dotnet ef dbcontext optimize', desc: 'Compile model ล่วงหน้า (EF 6+ performance)' },
+    ]
+  },
+];
+
+// ── Render ─────────────────────────────────────────────────
+function renderSection(sectionId, cards) {
+  const sec = document.getElementById(sectionId);
+  sec.innerHTML = '';
+  if (!cards.length) {
+    sec.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:20px;grid-column:1/-1;">ไม่พบคำสั่งที่ตรงกัน</div>';
+    return;
+  }
+  cards.forEach((card, ci) => {
+    const tagClass = card.tag === 'ef' ? 'tag-ef' : 'tag-dotnet';
+    const tagLabel = card.tag === 'ef' ? 'EF Core' : '.NET';
+    const cmdsHtml = card.cmds.map((c, i) => `
+      <div class="cmd-block" onclick="copyCmd(this, '${escapeForAttr(c.cmd)}')">
+        <div class="cmd-wrap">
+          <div class="cmd-line">${c.cmd}</div>
+          <div class="cmd-desc">${c.desc}</div>
+        </div>
+        <button class="copy-btn" title="Copy">⧉</button>
+      </div>
+      ${i < card.cmds.length - 1 ? '<div class="divider"></div>' : ''}
+    `).join('');
+
+    sec.innerHTML += `
+      <div class="card" style="animation-delay:${ci * 0.04}s">
+        <div class="card-header">
+          <span class="card-icon">${card.icon}</span>
+          <span class="card-title">${card.title}</span>
+          <span class="card-tag ${tagClass}">${tagLabel}</span>
+        </div>
+        <div class="card-body">${cmdsHtml}</div>
+      </div>
+    `;
+  });
+}
+
+function escapeForAttr(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent.replace(/'/g, "\\'");
+}
+
+function populate(filter = '', catFilter = 'all') {
+  const q = filter.toLowerCase();
+  const allSec = document.getElementById('sec-all');
+  allSec.innerHTML = '';
+
+  const cats = ['project','build','nuget','ef','efdb'];
+  cats.forEach(cat => {
+    let items = DATA.filter(d => d.cat === cat);
+    if (q) {
+      items = items.map(d => ({
+        ...d,
+        cmds: d.cmds.filter(c => {
+          const plain = c.cmd.replace(/<[^>]+>/g,'').toLowerCase();
+          return plain.includes(q) || c.desc.toLowerCase().includes(q) || d.title.toLowerCase().includes(q);
+        })
+      })).filter(d => d.cmds.length);
+    }
+    renderSection('sec-' + cat, catFilter === 'all' || catFilter === cat ? items : []);
+  });
+
+  // build "all" section
+  let allItems = DATA;
+  if (q) {
+    allItems = DATA.map(d => ({
+      ...d,
+      cmds: d.cmds.filter(c => {
+        const plain = c.cmd.replace(/<[^>]+>/g,'').toLowerCase();
+        return plain.includes(q) || c.desc.toLowerCase().includes(q) || d.title.toLowerCase().includes(q);
+      })
+    })).filter(d => d.cmds.length);
+  }
+  renderSection('sec-all', catFilter === 'all' ? allItems : []);
+}
+
+// ── Tab switching ───────────────────────────────────────────
+let currentCat = 'all';
+function switchTab(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + cat).classList.add('active');
+  populate(document.getElementById('searchInput').value, cat);
+}
+
+// ── Search ─────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e => {
+  populate(e.target.value, currentCat);
+  // if searching, show all tab
+  if (e.target.value) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-all').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.tab-btn').classList.add('active');
+    currentCat = 'all';
+  }
+});
+
+// ── Copy ───────────────────────────────────────────────────
+function copyCmd(block, raw) {
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = block.querySelector('.copy-btn');
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1500);
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  });
+}
+
+// ── Init ───────────────────────────────────────────────────
+populate();
+</script>
+</body>
+</html>
